@@ -2,12 +2,20 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, ShoppingCart, Search } from 'lucide-react';
+import { Menu, X, ShoppingCart, Search, User, LogOut, Settings } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const cartCount = useCartStore((state) => state.getCartCount());
+  const { user, isLoggedIn, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    setIsProfileOpen(false);
+  };
 
   return (
     <nav className="bg-blue-600 text-white shadow-lg">
@@ -33,8 +41,9 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Cart Icon */}
+          {/* Right side - Cart, Auth, Menu */}
           <div className="flex items-center gap-6">
+            {/* Cart Icon */}
             <Link
               href="/cart"
               className="relative flex items-center gap-2 hover:opacity-80 transition"
@@ -46,6 +55,80 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            {/* Desktop Auth Buttons - Visible on md and up */}
+            {!isLoggedIn && (
+              <div className="hidden md:flex gap-3">
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-white hover:bg-blue-700 rounded-lg transition"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-4 py-2 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+
+            {/* User Profile Dropdown - Visible when logged in */}
+            {isLoggedIn && user && (
+              <div className="hidden md:block relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center gap-2 hover:bg-blue-700 px-3 py-2 rounded-lg transition"
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-semibold hidden lg:inline">{user.name}</span>
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-xl z-50">
+                    <div className="px-4 py-3 border-b">
+                      <p className="font-semibold">{user.name}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition"
+                    >
+                      <User className="w-4 h-4" />
+                      My Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      My Orders
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 transition"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-red-600 transition border-t"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -60,6 +143,7 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden pb-4">
+            {/* Mobile Search */}
             <div className="bg-white rounded-lg px-4 py-2 flex items-center gap-2 mb-4">
               <Search className="w-5 h-5 text-gray-400" />
               <input
@@ -68,12 +152,63 @@ export default function Navbar() {
                 className="w-full outline-none text-gray-800 placeholder-gray-500"
               />
             </div>
+
+            {/* Mobile Navigation Links */}
             <Link href="/" className="block py-2 hover:bg-blue-700 px-4 rounded">
               Home
             </Link>
             <Link href="/cart" className="block py-2 hover:bg-blue-700 px-4 rounded">
               Cart
             </Link>
+
+            {/* Mobile Auth Links */}
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  href="/login"
+                  className="block py-2 hover:bg-blue-700 px-4 rounded"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block py-2 hover:bg-blue-700 px-4 rounded"
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="px-4 py-2 border-t border-blue-500">
+                  <p className="font-semibold text-sm">{user.name}</p>
+                  <p className="text-xs text-blue-100">{user.email}</p>
+                </div>
+                <Link
+                  href="/profile"
+                  className="block py-2 hover:bg-blue-700 px-4 rounded"
+                >
+                  My Profile
+                </Link>
+                <Link
+                  href="/orders"
+                  className="block py-2 hover:bg-blue-700 px-4 rounded"
+                >
+                  My Orders
+                </Link>
+                <Link
+                  href="/settings"
+                  className="block py-2 hover:bg-blue-700 px-4 rounded"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left py-2 hover:bg-blue-700 px-4 rounded text-red-200"
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

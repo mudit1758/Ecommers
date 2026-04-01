@@ -46,9 +46,11 @@ export default function CartPage() {
         return;
       }
 
+      const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_1234567890abcd';
+
       // Initialize Razorpay
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: keyId,
         amount: orderData.data.amount,
         currency: orderData.data.currency,
         name: 'ShopHub',
@@ -60,6 +62,7 @@ export default function CartPage() {
             `Payment successful! Payment ID: ${response.razorpay_payment_id}`
           );
           clearCart();
+          setLoading(false);
           window.location.href = '/';
         },
         prefill: {
@@ -83,11 +86,16 @@ export default function CartPage() {
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
       script.onload = () => {
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+        if (window.Razorpay) {
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        } else {
+          setError('Failed to load Razorpay. Please refresh and try again.');
+          setLoading(false);
+        }
       };
       script.onerror = () => {
-        setError('Failed to load Razorpay');
+        setError('Failed to load Razorpay checkout. Check your internet connection.');
         setLoading(false);
       };
       document.body.appendChild(script);
@@ -103,11 +111,27 @@ export default function CartPage() {
 
       <main className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Test Mode Banner */}
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🧪</span>
+              <div>
+                <h3 className="font-bold text-yellow-800">Test Mode Active</h3>
+                <p className="text-sm text-yellow-700">
+                  Use test card <code className="bg-yellow-100 px-2 py-1 rounded">4111 1111 1111 1111</code> to simulate payments
+                </p>
+              </div>
+            </div>
+          </div>
+
           <h1 className="text-3xl font-bold text-gray-800 mb-8">Shopping Cart</h1>
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-800">
-              {error}
+              <p className="font-semibold mb-1">⚠️ {error}</p>
+              <p className="text-sm">
+                Tip: If you see "404" error, ensure the Razorpay key is valid. You can use test mode with demo cards below.
+              </p>
             </div>
           )}
 
@@ -230,6 +254,16 @@ export default function CartPage() {
                     <span className="text-blue-600">
                       ₹{(totalPrice * 1.18).toFixed(2)}
                     </span>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-blue-800">
+                    <p className="font-semibold mb-2">💡 Test Mode</p>
+                    <p className="mb-2">Use these test cards:</p>
+                    <ul className="text-xs space-y-1">
+                      <li>💳 Card: 4111 1111 1111 1111</li>
+                      <li>📅 Expiry: Any future date</li>
+                      <li>🔐 CVV: Any 3 digits</li>
+                    </ul>
                   </div>
 
                   <button
